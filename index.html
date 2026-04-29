@@ -57,7 +57,6 @@
     overflow-x: hidden;
     transition: background 0.4s, color 0.4s;
   }
-  /* Animated background */
   #bg-canvas {
     position: fixed; top:0; left:0; width:100%; height:100%;
     z-index: 0; pointer-events: none;
@@ -93,6 +92,32 @@
     transition:all 0.2s; color:var(--text);
   }
   .theme-btn:hover { background:var(--surface3); border-color:var(--border2); }
+
+  /* Mobile hamburger */
+  .hamburger {
+    display:none; flex-direction:column; justify-content:center; align-items:center;
+    gap:5px; width:38px; height:38px; cursor:pointer;
+    background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+  }
+  .hamburger span { width:18px; height:2px; background:var(--text); border-radius:2px; transition:all 0.3s; }
+
+  /* Mobile nav drawer */
+  .mobile-nav {
+    display:none; position:fixed; top:64px; left:0; right:0; z-index:99;
+    background: rgba(13,40,24,0.97);
+    backdrop-filter: blur(20px);
+    border-bottom:1px solid var(--border);
+    flex-direction:column; padding:16px 24px; gap:4px;
+  }
+  [data-theme="light"] .mobile-nav { background: rgba(232,245,233,0.97); }
+  .mobile-nav.open { display:flex; }
+  .mobile-nav a {
+    color:var(--text2); text-decoration:none; font-size:15px; font-weight:500;
+    padding:12px 0; border-bottom:1px solid var(--border); cursor:pointer;
+    transition:color 0.2s;
+  }
+  .mobile-nav a:last-child { border-bottom:none; }
+  .mobile-nav a:hover { color:var(--accent); }
 
   /* HERO */
   .hero {
@@ -186,9 +211,7 @@
     font-family:'DM Sans',sans-serif;
   }
   .toggle-btn.active { background:var(--accent); color:#fff; }
-  .calc-btn {
-    width:100%; margin-top:8px;
-  }
+  .calc-btn { width:100%; margin-top:8px; }
 
   /* BMI GAUGE */
   .bmi-result { text-align:center; padding:24px; }
@@ -216,12 +239,11 @@
     border:1px solid var(--border); border-radius:var(--radius2);
     padding:24px; transition:all 0.3s; cursor:pointer; position:relative; overflow:hidden;
   }
-  .tool-card::before { content:''; position:absolute; inset:0; opacity:0; transition:opacity 0.3s; }
   .tool-card:hover { border-color:var(--border2); transform:translateY(-3px); box-shadow:var(--glow); }
   .tool-icon { width:44px; height:44px; margin-bottom:16px; }
   .tool-title { font-family:'Syne',sans-serif; font-size:17px; font-weight:700; margin-bottom:8px; color:var(--text); }
   .tool-desc { font-size:14px; color:var(--text2); line-height:1.6; margin-bottom:16px; }
-  .tool-result { background:var(--surface2); border-radius:10px; padding:12px 16px; font-size:14px; color:var(--accent); font-weight:600; display:none; margin-top:8px; }
+  .tool-result { background:var(--surface2); border-radius:10px; padding:12px 16px; font-size:14px; color:var(--accent); font-weight:600; display:none; margin-top:8px; white-space:pre-line; }
   .tool-inputs { margin-top:12px; display:none; }
   .tool-inputs.open { display:block; }
   .tool-result.show { display:block; animation:fadeIn 0.3s; }
@@ -325,9 +347,14 @@
     box-shadow:var(--shadow2);
   }
 
+  /* Active nav link */
+  .nav-links a.active { color:var(--accent); }
+
   /* RESPONSIVE */
   @media(max-width:768px){
     nav .nav-links { display:none; }
+    nav .nav-export { display:none; }
+    .hamburger { display:flex; }
     .hero-visual { display:none; }
     .insight-grid { grid-template-columns:1fr; }
   }
@@ -355,11 +382,11 @@
     <span class="nav-brand-text">HealthPro</span>
   </div>
   <div class="nav-links">
-    <a onclick="scrollTo('bmi')">BMI Calculator</a>
-    <a onclick="scrollTo('wellness')">Wellness Tools</a>
-    <a onclick="scrollTo('dashboard')">Dashboard</a>
-    <a onclick="scrollTo('tracker')">History</a>
-    <a onclick="scrollTo('tips')">Health Tips</a>
+    <a onclick="navScrollTo('bmi')">BMI Calculator</a>
+    <a onclick="navScrollTo('wellness')">Wellness Tools</a>
+    <a onclick="navScrollTo('dashboard')">Dashboard</a>
+    <a onclick="navScrollTo('tracker')">History</a>
+    <a onclick="navScrollTo('tips')">Health Tips</a>
   </div>
   <div class="nav-right">
     <button class="theme-btn" id="theme-toggle" title="Toggle Theme">
@@ -370,9 +397,22 @@
         <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
       </svg>
     </button>
-    <button class="btn-primary" style="padding:10px 20px;font-size:14px;" onclick="exportReport()">Export Report</button>
+    <button class="btn-primary nav-export" style="padding:10px 20px;font-size:14px;" onclick="exportReport()">Export Report</button>
+    <button class="hamburger" id="hamburger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
+
+<!-- Mobile nav drawer -->
+<div class="mobile-nav" id="mobile-nav">
+  <a onclick="navScrollTo('bmi')">BMI Calculator</a>
+  <a onclick="navScrollTo('wellness')">Wellness Tools</a>
+  <a onclick="navScrollTo('dashboard')">Dashboard</a>
+  <a onclick="navScrollTo('tracker')">History</a>
+  <a onclick="navScrollTo('tips')">Health Tips</a>
+  <a onclick="exportReport()" style="color:var(--accent);">Export Report</a>
+</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -385,8 +425,8 @@
       <h1>Your Personal<br><span>Health Intelligence</span><br>Dashboard</h1>
       <p>Track BMI, calories, hydration, sleep, and more with precision health tools built for your wellness journey.</p>
       <div class="hero-btns">
-        <button class="btn-primary" onclick="scrollTo('bmi')">Check Your BMI</button>
-        <button class="btn-secondary" onclick="scrollTo('wellness')">Explore Tools</button>
+        <button class="btn-primary" onclick="navScrollTo('bmi')">Check Your BMI</button>
+        <button class="btn-secondary" onclick="navScrollTo('wellness')">Explore Tools</button>
       </div>
       <div class="hero-stats">
         <div class="hero-stat">
@@ -403,27 +443,22 @@
         </div>
       </div>
     </div>
-    <!-- Hero visual SVG -->
     <div class="hero-visual">
       <svg viewBox="0 0 420 420" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="210" cy="210" r="200" fill="rgba(46,204,113,0.04)" stroke="rgba(46,204,113,0.1)" stroke-width="1"/>
         <circle cx="210" cy="210" r="150" fill="rgba(46,204,113,0.06)" stroke="rgba(46,204,113,0.12)" stroke-width="1"/>
         <circle cx="210" cy="210" r="100" fill="rgba(46,204,113,0.08)" stroke="rgba(46,204,113,0.18)" stroke-width="1"/>
-        <!-- Heartbeat line -->
         <path d="M70 210 L120 210 L140 160 L165 260 L190 180 L215 240 L230 210 L350 210" stroke="#2ecc71" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.8">
           <animate attributeName="stroke-dasharray" values="0 500;500 0" dur="2s" repeatCount="indefinite"/>
         </path>
-        <!-- Floating leaves -->
         <g opacity="0.4">
           <ellipse cx="330" cy="120" rx="14" ry="8" fill="#2ecc71" transform="rotate(-30 330 120)"><animate attributeName="cy" values="120;108;120" dur="3s" repeatCount="indefinite"/></ellipse>
           <ellipse cx="90" cy="300" rx="10" ry="6" fill="#27ae60" transform="rotate(45 90 300)"><animate attributeName="cy" values="300;290;300" dur="4s" repeatCount="indefinite"/></ellipse>
           <ellipse cx="360" cy="280" rx="12" ry="7" fill="#1e8449" transform="rotate(-15 360 280)"><animate attributeName="cy" values="280;268;280" dur="3.5s" repeatCount="indefinite"/></ellipse>
         </g>
-        <!-- Center badge -->
         <circle cx="210" cy="210" r="55" fill="rgba(46,204,113,0.15)" stroke="rgba(46,204,113,0.4)" stroke-width="1.5"/>
         <text x="210" y="198" text-anchor="middle" fill="#2ecc71" font-size="28" font-family="Syne" font-weight="800">BMI</text>
         <text x="210" y="220" text-anchor="middle" fill="#a5d6a7" font-size="12" font-family="DM Sans">Health Score</text>
-        <!-- Orbit dots -->
         <circle cx="210" cy="60" r="6" fill="#2ecc71" opacity="0.6"><animateTransform attributeName="transform" type="rotate" from="0 210 210" to="360 210 210" dur="8s" repeatCount="indefinite"/></circle>
         <circle cx="360" cy="210" r="4" fill="#f0c040" opacity="0.6"><animateTransform attributeName="transform" type="rotate" from="180 210 210" to="540 210 210" dur="6s" repeatCount="indefinite"/></circle>
       </svg>
@@ -440,19 +475,15 @@
       <div class="section-subtitle">Enter your measurements for an instant, accurate BMI reading with personalized health insights.</div>
     </div>
     <div class="bmi-grid mt-4" style="margin-top:40px;">
-      <!-- Input Panel -->
       <div class="card reveal">
         <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:24px;display:flex;align-items:center;gap:10px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           Your Measurements
         </div>
-
-        <!-- Age -->
         <div class="input-group">
           <label>Age (years)</label>
           <input type="number" id="bmi-age" class="input-field" placeholder="25" min="2" max="120">
         </div>
-        <!-- Gender -->
         <div class="input-group">
           <label>Gender</label>
           <div class="toggle-group" style="width:fit-content;">
@@ -460,7 +491,6 @@
             <button class="toggle-btn" id="gender-female" onclick="setGender('female')">Female</button>
           </div>
         </div>
-        <!-- Height -->
         <div class="input-group">
           <label>Height</label>
           <div class="input-row">
@@ -474,7 +504,6 @@
             <input type="number" id="height-in" class="input-field" placeholder="Inches" step="0.1">
           </div>
         </div>
-        <!-- Weight -->
         <div class="input-group">
           <label>Weight</label>
           <div class="input-row">
@@ -485,13 +514,10 @@
             </div>
           </div>
         </div>
-        <button class="btn-primary calc-btn" onclick="calculateBMI()">
-          Calculate BMI
-        </button>
+        <button class="btn-primary calc-btn" onclick="calculateBMI()">Calculate BMI</button>
         <button class="btn-secondary calc-btn" style="margin-top:10px;" onclick="saveToHistory()">Save to History</button>
       </div>
 
-      <!-- Result Panel -->
       <div class="card reveal" id="result-panel">
         <div id="bmi-placeholder" style="text-align:center;padding:60px 20px;color:var(--text3);">
           <svg width="64" height="64" viewBox="0 0 64 64" fill="none" style="margin:0 auto 16px;display:block;opacity:0.4;">
@@ -502,7 +528,6 @@
         </div>
         <div id="bmi-result-content" style="display:none;">
           <div class="bmi-result">
-            <!-- Gauge -->
             <div id="gauge-container">
               <svg id="gauge-svg" viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
                 <defs>
@@ -513,18 +538,14 @@
                     <stop offset="100%" stop-color="#e74c3c"/>
                   </linearGradient>
                 </defs>
-                <!-- Track -->
                 <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="14" stroke-linecap="round"/>
-                <!-- Colored arc -->
                 <path id="gauge-arc" d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="283" style="transition:stroke-dashoffset 0.8s ease;"/>
-                <!-- Needle -->
                 <line id="gauge-needle" x1="110" y1="120" x2="110" y2="40" stroke="white" stroke-width="2.5" stroke-linecap="round" transform="rotate(0 110 120)" style="transition:transform 0.8s ease;"/>
                 <circle cx="110" cy="120" r="6" fill="#2ecc71"/>
               </svg>
             </div>
             <div class="bmi-number" id="bmi-display">--</div>
             <div class="bmi-category" id="bmi-category">--</div>
-            <!-- Range bar -->
             <div class="bmi-range-bar">
               <div class="bmi-range-indicator" id="range-indicator" style="left:0%;"></div>
             </div>
@@ -545,8 +566,7 @@
       </div>
     </div>
 
-    <!-- BMI Trend Chart -->
-    <div class="card reveal" style="margin-top:28px;" id="chart-card" style="display:none;">
+    <div class="card reveal" style="margin-top:28px;" id="chart-card">
       <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:10px;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         BMI History Trend
@@ -569,7 +589,6 @@
     </div>
     <div class="tools-grid">
 
-      <!-- Water Intake -->
       <div class="tool-card reveal">
         <svg class="tool-icon" viewBox="0 0 44 44" fill="none">
           <rect width="44" height="44" rx="12" fill="rgba(52,152,219,0.15)"/>
@@ -591,7 +610,6 @@
         <div class="tool-result" id="water-result"></div>
       </div>
 
-      <!-- Calorie Needs -->
       <div class="tool-card reveal">
         <svg class="tool-icon" viewBox="0 0 44 44" fill="none">
           <rect width="44" height="44" rx="12" fill="rgba(230,126,34,0.15)"/>
@@ -619,7 +637,6 @@
         <div class="tool-result" id="cal-result"></div>
       </div>
 
-      <!-- Steps Goal -->
       <div class="tool-card reveal">
         <svg class="tool-icon" viewBox="0 0 44 44" fill="none">
           <rect width="44" height="44" rx="12" fill="rgba(46,204,113,0.15)"/>
@@ -643,7 +660,6 @@
         <div class="tool-result" id="step-result"></div>
       </div>
 
-      <!-- Sleep Recommender -->
       <div class="tool-card reveal">
         <svg class="tool-icon" viewBox="0 0 44 44" fill="none">
           <rect width="44" height="44" rx="12" fill="rgba(155,89,182,0.15)"/>
@@ -665,7 +681,6 @@
         <div class="tool-result" id="sleep-result"></div>
       </div>
 
-      <!-- Body Fat Estimate -->
       <div class="tool-card reveal">
         <svg class="tool-icon" viewBox="0 0 44 44" fill="none">
           <rect width="44" height="44" rx="12" fill="rgba(231,76,60,0.15)"/>
@@ -689,7 +704,6 @@
         <div class="tool-result" id="bf-result"></div>
       </div>
 
-      <!-- Heart Rate -->
       <div class="tool-card reveal">
         <svg class="tool-icon" viewBox="0 0 44 44" fill="none">
           <rect width="44" height="44" rx="12" fill="rgba(231,76,60,0.15)"/>
@@ -963,53 +977,30 @@
 
 <!-- FOOTER -->
 <footer style="padding:20px 10px; text-align:center; font-size:13px;">
-
-  <!-- Disclaimer -->
   <div style="display:flex;justify-content:center;gap:32px;flex-wrap:wrap;margin-bottom:16px;">
     <div>
-      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">
-        Disclaimer
-      </div>
-      <div style="font-size:12px;color:var(--text2);max-width:400px;">
-        For educational purposes only. Consult a healthcare professional for medical advice.
-      </div>
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">Disclaimer</div>
+      <div style="font-size:12px;color:var(--text2);max-width:400px;">For educational purposes only. Consult a healthcare professional for medical advice.</div>
     </div>
   </div>
-
-  <!-- Divider -->
   <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:10px;">
-    <p style="margin:0;">
-      Health Checker Pro &copy; 2026 — Built with precision for your wellness journey
-    </p>
-    <p style="margin-top:4px;font-size:11px;opacity:0.6;">
-      Data stored locally in your browser. Nothing is sent to external servers.
-    </p>
+    <p style="margin:0;">Health Checker Pro &copy; 2026 — Built with precision for your wellness journey</p>
+    <p style="margin-top:4px;font-size:11px;opacity:0.6;">Data stored locally in your browser. Nothing is sent to external servers.</p>
   </div>
-
-  <!-- Crafted by (FIXED) -->
   <div style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;">
-    
     <div style="width:20px;height:1px;background:#ccc;"></div>
-
     <span style="opacity:0.7;">Designed by</span>
-
-    <a href="https://github.com/Paim41" target="_blank" rel="noopener noreferrer"
-       style="display:flex;align-items:center;gap:4px;text-decoration:none;color:inherit;">
-      
+    <a href="https://github.com/Paim41" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;gap:4px;text-decoration:none;color:inherit;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.868-.013-1.703-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.607.069-.607 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
       </svg>
-
       <span>Paim41</span>
     </a>
-
     <div style="width:20px;height:1px;background:#ccc;"></div>
-
   </div>
-
 </footer>
 
-<div id="toast">Saved to history!</div>
+<div id="toast">Saved!</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
@@ -1020,12 +1011,66 @@ let state = {
   heightUnit: 'cm', weightUnit: 'kg', gender: 'male',
   bmi: null, bmiHistory: [], bmiChart: null
 };
-
-// Load from localStorage
 try {
   const saved = JSON.parse(localStorage.getItem('hcp_history') || '[]');
   state.bmiHistory = saved;
 } catch(e) {}
+
+// ============================================================
+// NAVIGATION — renamed to navScrollTo to avoid conflicting
+// with the native window.scrollTo()
+// ============================================================
+function navScrollTo(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  // Account for the fixed nav bar (64px)
+  const offset = 64;
+  const top = el.getBoundingClientRect().top + window.pageYOffset - offset;
+  window.scrollTo({ top, behavior: 'smooth' });
+  // Close mobile nav if open
+  closeMobileNav();
+  // Highlight active link
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  const links = document.querySelectorAll(`.nav-links a[onclick="navScrollTo('${id}')"]`);
+  links.forEach(l => l.classList.add('active'));
+}
+
+// Active link on scroll
+const sections = ['bmi','wellness','dashboard','tracker','tips'];
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.getBoundingClientRect().top <= 100) current = id;
+  });
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.classList.remove('active');
+    if (a.getAttribute('onclick') === `navScrollTo('${current}')`) a.classList.add('active');
+  });
+}, { passive: true });
+
+// ============================================================
+// HAMBURGER MENU
+// ============================================================
+const hamburger = document.getElementById('hamburger');
+const mobileNav = document.getElementById('mobile-nav');
+
+hamburger.addEventListener('click', () => {
+  const isOpen = mobileNav.classList.toggle('open');
+  hamburger.setAttribute('aria-expanded', isOpen);
+});
+
+function closeMobileNav() {
+  mobileNav.classList.remove('open');
+  hamburger.setAttribute('aria-expanded', false);
+}
+
+// Close mobile nav when clicking outside
+document.addEventListener('click', (e) => {
+  if (!hamburger.contains(e.target) && !mobileNav.contains(e.target)) {
+    closeMobileNav();
+  }
+});
 
 // ============================================================
 // BACKGROUND CANVAS ANIMATION
@@ -1054,13 +1099,11 @@ function drawParticle(p) {
   ctx.save();
   ctx.globalAlpha = p.alpha;
   if (p.type === 0) {
-    // Circle (pulse)
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
     ctx.fillStyle = '#2ecc71';
     ctx.fill();
   } else if (p.type === 1) {
-    // Leaf shape
     ctx.translate(p.x, p.y);
     ctx.rotate(time * 0.02 + p.x);
     ctx.beginPath();
@@ -1068,7 +1111,6 @@ function drawParticle(p) {
     ctx.fillStyle = '#27ae60';
     ctx.fill();
   } else {
-    // Diamond
     ctx.translate(p.x, p.y);
     ctx.rotate(Math.PI / 4);
     ctx.fillStyle = 'rgba(240,192,64,0.5)';
@@ -1081,7 +1123,6 @@ function animBg() {
   ctx.clearRect(0, 0, W, H);
   time++;
   const isDark = document.body.getAttribute('data-theme') === 'dark';
-  // Gradient mesh
   const grd = ctx.createRadialGradient(W * 0.3, H * 0.4 + Math.sin(time * 0.005) * 50, 0, W * 0.3, H * 0.4, W * 0.7);
   if (isDark) {
     grd.addColorStop(0, 'rgba(26,74,46,0.35)');
@@ -1092,9 +1133,7 @@ function animBg() {
   }
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, W, H);
-
-  // Particles
-  particles.forEach((p, i) => {
+  particles.forEach((p) => {
     drawParticle(p);
     p.x += p.vx; p.y += p.vy;
     if (p.y < -20) { p.y = H + 20; p.x = Math.random() * W; }
@@ -1105,10 +1144,6 @@ function animBg() {
 }
 animBg();
 
-// Mouse parallax
-let mx = 0, my = 0;
-document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-
 // ============================================================
 // THEME TOGGLE
 // ============================================================
@@ -1117,16 +1152,12 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
   document.body.setAttribute('data-theme', t === 'dark' ? 'light' : 'dark');
   localStorage.setItem('hcp_theme', t === 'dark' ? 'light' : 'dark');
 });
-// Load saved theme
 const savedTheme = localStorage.getItem('hcp_theme');
 if (savedTheme) document.body.setAttribute('data-theme', savedTheme);
 
 // ============================================================
-// SCROLL
+// SCROLL REVEAL
 // ============================================================
-function scrollTo(id) { document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
-
-// Reveal on scroll
 const reveals = document.querySelectorAll('.reveal');
 const obs = new IntersectionObserver((entries) => {
   entries.forEach((e, i) => {
@@ -1170,7 +1201,6 @@ function getWeightKg() {
   const val = parseFloat(document.getElementById('weight-val').value);
   return state.weightUnit === 'kg' ? val : val * 0.453592;
 }
-
 function calculateBMI() {
   const h = getHeightM();
   const w = getWeightKg();
@@ -1179,51 +1209,35 @@ function calculateBMI() {
   state.bmi = bmi;
   displayBMI(bmi, h, w);
 }
-
 function displayBMI(bmi, h, w) {
   document.getElementById('bmi-placeholder').style.display = 'none';
   document.getElementById('bmi-result-content').style.display = 'block';
-
   const b = parseFloat(bmi.toFixed(1));
   document.getElementById('bmi-display').textContent = b;
-
   let cat, color, risk, tip;
   if (b < 18.5) { cat = 'Underweight'; color = '#3498db'; risk = 'Moderate'; tip = 'Increase caloric intake'; }
   else if (b < 25) { cat = 'Normal Weight'; color = '#2ecc71'; risk = 'Low'; tip = 'Maintain current habits'; }
   else if (b < 30) { cat = 'Overweight'; color = '#f39c12'; risk = 'Elevated'; tip = 'Increase physical activity'; }
   else { cat = 'Obese'; color = '#e74c3c'; risk = 'High'; tip = 'Consult a healthcare provider'; }
-
   document.getElementById('bmi-display').style.color = color;
   document.getElementById('bmi-category').textContent = cat;
   document.getElementById('bmi-category').style.color = color;
   document.getElementById('bmi-health-risk').textContent = risk;
   document.getElementById('bmi-insight-tip').textContent = tip;
   document.getElementById('body-type').textContent = cat;
-
-  // Ideal weight
   const minW = 18.5 * h * h;
   const maxW = 24.9 * h * h;
   document.getElementById('ideal-weight').textContent = `${minW.toFixed(0)}-${maxW.toFixed(0)} kg`;
-
-  // Gauge needle
   const clampedBMI = Math.min(Math.max(b, 10), 40);
   const angle = ((clampedBMI - 10) / 30) * 180 - 90;
   document.getElementById('gauge-needle').setAttribute('transform', `rotate(${angle} 110 120)`);
-
-  // Gauge arc progress
   const pct = Math.min((clampedBMI - 10) / 30, 1);
   document.getElementById('gauge-arc').style.strokeDashoffset = 283 * (1 - pct);
-
-  // Range indicator
   const rangePct = Math.min(Math.max((b - 10) / 30 * 100, 0), 100);
   document.getElementById('range-indicator').style.left = rangePct + '%';
-
-  // Dashboard ring
   const dashPct = Math.min(pct, 1);
   document.getElementById('bmi-ring').style.strokeDashoffset = 239 * (1 - dashPct * 0.85);
   document.getElementById('dash-bmi').textContent = b;
-
-  // Update chart
   updateChart();
 }
 
@@ -1245,7 +1259,6 @@ function saveToHistory() {
   updateChart();
   showToast('Saved to history!');
 }
-
 function getBMICat(b) {
   if (b < 18.5) return 'Underweight';
   if (b < 25) return 'Normal';
@@ -1258,7 +1271,6 @@ function getBMIColor(b) {
   if (b < 30) return '#f39c12';
   return '#e74c3c';
 }
-
 function renderHistory() {
   const list = document.getElementById('history-list');
   if (!state.bmiHistory.length) {
@@ -1278,7 +1290,6 @@ function renderHistory() {
     </div>
   `).join('');
 }
-
 function deleteEntry(i) {
   state.bmiHistory.splice(i, 1);
   localStorage.setItem('hcp_history', JSON.stringify(state.bmiHistory));
@@ -1296,44 +1307,33 @@ function clearHistory() {
 // CHART
 // ============================================================
 function updateChart() {
-  document.getElementById('chart-card') && (document.getElementById('chart-card').style.display = state.bmiHistory.length > 0 ? 'block' : 'none');
+  const chartCard = document.getElementById('chart-card');
+  if (chartCard) chartCard.style.display = state.bmiHistory.length > 0 ? 'block' : 'none';
   if (state.bmiHistory.length < 1) return;
-
   const chartCanvas = document.getElementById('bmi-chart');
   const labels = [...state.bmiHistory].reverse().map(e => e.date);
   const data = [...state.bmiHistory].reverse().map(e => e.bmi);
   const colors = data.map(b => getBMIColor(b));
-
   if (state.bmiChart) state.bmiChart.destroy();
   state.bmiChart = new Chart(chartCanvas, {
     type: 'line',
     data: {
       labels,
       datasets: [{
-        label: 'BMI',
-        data,
+        label: 'BMI', data,
         borderColor: '#2ecc71',
         backgroundColor: 'rgba(46,204,113,0.1)',
         pointBackgroundColor: colors,
-        pointRadius: 6,
-        pointHoverRadius: 8,
-        fill: true,
-        tension: 0.4
+        pointRadius: 6, pointHoverRadius: 8,
+        fill: true, tension: 0.4
       }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        y: {
-          min: 10, max: 40,
-          grid: { color: 'rgba(255,255,255,0.05)' },
-          ticks: { color: '#a5d6a7', font: { family: 'DM Sans' } }
-        },
-        x: {
-          grid: { color: 'rgba(255,255,255,0.05)' },
-          ticks: { color: '#a5d6a7', font: { family: 'DM Sans' }, maxRotation: 45, autoSkip: false }
-        }
+        y: { min: 10, max: 40, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a5d6a7', font: { family: 'DM Sans' } } },
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a5d6a7', font: { family: 'DM Sans' }, maxRotation: 45, autoSkip: false } }
       }
     }
   });
@@ -1351,7 +1351,6 @@ function calcWater() {
   showResult('water-result', `Daily target: ${liters}L (${glasses} glasses of 250ml)`);
   document.getElementById('dash-water').textContent = liters + 'L';
 }
-
 function calcCalories() {
   const age = parseFloat(document.getElementById('cal-age').value);
   const w = parseFloat(document.getElementById('cal-weight').value);
@@ -1359,14 +1358,11 @@ function calcCalories() {
   const g = document.getElementById('cal-gender').value;
   const act = parseFloat(document.getElementById('cal-activity').value);
   if (!age || !w || !h) { showResult('cal-result', 'Please fill all fields.'); return; }
-  let bmr = g === 'male'
-    ? 10 * w + 6.25 * h - 5 * age + 5
-    : 10 * w + 6.25 * h - 5 * age - 161;
+  let bmr = g === 'male' ? 10*w + 6.25*h - 5*age + 5 : 10*w + 6.25*h - 5*age - 161;
   const tdee = Math.round(bmr * act);
-  showResult('cal-result', `Maintenance: ${tdee} kcal/day\nWeight loss: ${tdee - 500} kcal/day\nWeight gain: ${tdee + 300} kcal/day`);
+  showResult('cal-result', `Maintenance: ${tdee} kcal/day\nWeight loss: ${tdee-500} kcal/day\nWeight gain: ${tdee+300} kcal/day`);
   document.getElementById('dash-cal').textContent = tdee;
 }
-
 function calcSteps() {
   const goal = document.getElementById('step-goal').value;
   const age = parseInt(document.getElementById('step-age').value) || 30;
@@ -1374,64 +1370,52 @@ function calcSteps() {
   let base = goals[goal];
   if (age > 65) base = Math.min(base, 8000);
   if (age < 18) base = Math.round(base * 1.2);
-  showResult('step-result', `Daily goal: ${base.toLocaleString()} steps\n≈ ${(base * 0.0008).toFixed(1)} km / ${(base * 0.0005).toFixed(1)} miles`);
-  document.getElementById('dash-steps').textContent = base >= 1000 ? Math.round(base / 1000) + 'K' : base;
+  showResult('step-result', `Daily goal: ${base.toLocaleString()} steps\n≈ ${(base*0.0008).toFixed(1)} km / ${(base*0.0005).toFixed(1)} miles`);
+  document.getElementById('dash-steps').textContent = base >= 1000 ? Math.round(base/1000)+'K' : base;
 }
-
 function calcSleep() {
   const age = parseInt(document.getElementById('sleep-age').value) || 30;
   const q = document.getElementById('sleep-quality').value;
   let min, max;
-  if (age <= 1) { min = 14; max = 17; }
-  else if (age <= 2) { min = 11; max = 14; }
-  else if (age <= 5) { min = 10; max = 13; }
-  else if (age <= 12) { min = 9; max = 11; }
-  else if (age <= 17) { min = 8; max = 10; }
-  else if (age <= 64) { min = 7; max = 9; }
-  else { min = 7; max = 8; }
-  if (q === 'athlete') { min++; max++; }
-  if (q === 'stress') { min++; }
-  showResult('sleep-result', `Recommended: ${min}–${max} hours/night\nIdeal bedtime (7am wake): ${22 - min}:00 – ${22 - max + 1}:00`);
-  document.getElementById('dash-sleep').textContent = min + 'h';
+  if (age<=1){min=14;max=17;} else if(age<=2){min=11;max=14;} else if(age<=5){min=10;max=13;}
+  else if(age<=12){min=9;max=11;} else if(age<=17){min=8;max=10;} else if(age<=64){min=7;max=9;} else{min=7;max=8;}
+  if (q==='athlete'){min++;max++;} if(q==='stress'){min++;}
+  showResult('sleep-result', `Recommended: ${min}–${max} hours/night\nIdeal bedtime (7am wake): ${22-min}:00 – ${22-max+1}:00`);
+  document.getElementById('dash-sleep').textContent = min+'h';
 }
-
 function calcBodyFat() {
   const height = parseFloat(document.getElementById('bf-height').value);
   const waist = parseFloat(document.getElementById('bf-waist').value);
   const neck = parseFloat(document.getElementById('bf-neck').value);
   const hip = parseFloat(document.getElementById('bf-hip').value);
   const g = document.getElementById('bf-gender').value;
-  if (!height || !waist || !neck) { showResult('bf-result', 'Please fill required fields.'); return; }
+  if (!height||!waist||!neck){showResult('bf-result','Please fill required fields.');return;}
   let bf;
-  if (g === 'male') {
-    bf = 495 / (1.0324 - 0.19077 * Math.log10(waist - neck) + 0.15456 * Math.log10(height)) - 450;
-  } else {
-    if (!hip) { showResult('bf-result', 'Hip measurement required for females.'); return; }
-    bf = 495 / (1.29579 - 0.35004 * Math.log10(waist + hip - neck) + 0.22100 * Math.log10(height)) - 450;
+  if(g==='male'){
+    bf=495/(1.0324-0.19077*Math.log10(waist-neck)+0.15456*Math.log10(height))-450;
+  }else{
+    if(!hip){showResult('bf-result','Hip measurement required for females.');return;}
+    bf=495/(1.29579-0.35004*Math.log10(waist+hip-neck)+0.22100*Math.log10(height))-450;
   }
-  bf = Math.max(3, Math.min(60, bf));
-  let cat = bf < 6 ? 'Essential Fat' : bf < 14 ? 'Athletic' : bf < 18 ? 'Fitness' : bf < 25 ? 'Average' : 'Above Average';
-  if (g === 'female') {
-    cat = bf < 14 ? 'Essential' : bf < 21 ? 'Athletic' : bf < 25 ? 'Fitness' : bf < 32 ? 'Average' : 'Above Average';
-  }
-  showResult('bf-result', `Estimated body fat: ${bf.toFixed(1)}%\nCategory: ${cat}`);
+  bf=Math.max(3,Math.min(60,bf));
+  let cat=bf<6?'Essential Fat':bf<14?'Athletic':bf<18?'Fitness':bf<25?'Average':'Above Average';
+  if(g==='female'){cat=bf<14?'Essential':bf<21?'Athletic':bf<25?'Fitness':bf<32?'Average':'Above Average';}
+  showResult('bf-result',`Estimated body fat: ${bf.toFixed(1)}%\nCategory: ${cat}`);
 }
-
 function calcHeartRate() {
   const age = parseInt(document.getElementById('hr-age').value);
   const goal = document.getElementById('hr-goal').value;
-  if (!age || age < 1) { showResult('hr-result', 'Please enter a valid age.'); return; }
-  const max = 220 - age;
-  if (goal === 'all') {
-    showResult('hr-result', `Max HR: ${max} bpm\nFat Burn: ${Math.round(max*0.5)}–${Math.round(max*0.7)} bpm\nCardio: ${Math.round(max*0.7)}–${Math.round(max*0.85)} bpm\nPeak: ${Math.round(max*0.85)}–${max} bpm`);
-  } else {
-    const zones = { fat: [0.5, 0.7], cardio: [0.7, 0.85], peak: [0.85, 1.0] };
-    const [lo, hi] = zones[goal];
-    showResult('hr-result', `${goal.charAt(0).toUpperCase()+goal.slice(1)} Zone:\n${Math.round(max*lo)}–${Math.round(max*hi)} bpm`);
+  if(!age||age<1){showResult('hr-result','Please enter a valid age.');return;}
+  const max=220-age;
+  if(goal==='all'){
+    showResult('hr-result',`Max HR: ${max} bpm\nFat Burn: ${Math.round(max*0.5)}–${Math.round(max*0.7)} bpm\nCardio: ${Math.round(max*0.7)}–${Math.round(max*0.85)} bpm\nPeak: ${Math.round(max*0.85)}–${max} bpm`);
+  }else{
+    const zones={fat:[0.5,0.7],cardio:[0.7,0.85],peak:[0.85,1.0]};
+    const[lo,hi]=zones[goal];
+    showResult('hr-result',`${goal.charAt(0).toUpperCase()+goal.slice(1)} Zone:\n${Math.round(max*lo)}–${Math.round(max*hi)} bpm`);
   }
-  document.getElementById('dash-hr').textContent = Math.round(max * 0.65);
+  document.getElementById('dash-hr').textContent=Math.round(max*0.65);
 }
-
 function showResult(id, text) {
   const el = document.getElementById(id);
   el.textContent = text;
@@ -1442,28 +1426,28 @@ function showResult(id, text) {
 // GOAL TRACKER
 // ============================================================
 const weeklyGoals = [
-  { text: '150 min of aerobic exercise', done: false },
-  { text: '2 strength training sessions', done: false },
-  { text: 'Daily water intake target met', done: false },
-  { text: '7-9 hours of sleep nightly', done: false },
-  { text: '10 min of mindfulness', done: false },
-  { text: '5+ servings of vegetables', done: false },
-  { text: 'Limit screen time after 9pm', done: false },
+  {text:'150 min of aerobic exercise',done:false},
+  {text:'2 strength training sessions',done:false},
+  {text:'Daily water intake target met',done:false},
+  {text:'7-9 hours of sleep nightly',done:false},
+  {text:'10 min of mindfulness',done:false},
+  {text:'5+ servings of vegetables',done:false},
+  {text:'Limit screen time after 9pm',done:false},
 ];
 try {
   const savedGoals = JSON.parse(localStorage.getItem('hcp_goals') || 'null');
   if (savedGoals && savedGoals.length === weeklyGoals.length) {
-    savedGoals.forEach((g, i) => weeklyGoals[i].done = g.done);
+    savedGoals.forEach((g,i) => weeklyGoals[i].done = g.done);
   }
 } catch(e){}
 
 function renderGoals() {
-  document.getElementById('goals-list').innerHTML = weeklyGoals.map((g, i) => `
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);" onclick="toggleGoal(${i})" style="cursor:pointer;">
-      <div style="width:20px;height:20px;border-radius:6px;border:1.5px solid ${g.done ? 'var(--accent)' : 'var(--border2)'};background:${g.done ? 'var(--accent)' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all 0.2s;">
-        ${g.done ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6 L5 9 L10 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
+  document.getElementById('goals-list').innerHTML = weeklyGoals.map((g,i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="toggleGoal(${i})">
+      <div style="width:20px;height:20px;border-radius:6px;border:1.5px solid ${g.done?'var(--accent)':'var(--border2)'};background:${g.done?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;">
+        ${g.done?'<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6 L5 9 L10 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
       </div>
-      <span style="font-size:13px;color:${g.done ? 'var(--text3)' : 'var(--text2)'};text-decoration:${g.done ? 'line-through' : 'none'};">${g.text}</span>
+      <span style="font-size:13px;color:${g.done?'var(--text3)':'var(--text2)'};text-decoration:${g.done?'line-through':'none'};">${g.text}</span>
     </div>
   `).join('');
 }
@@ -1472,16 +1456,15 @@ function toggleGoal(i) {
   localStorage.setItem('hcp_goals', JSON.stringify(weeklyGoals));
   renderGoals();
 }
-
 function updateTargetBMI(v) {
   document.getElementById('target-bmi-display').textContent = parseFloat(v).toFixed(1);
-  document.getElementById('target-display').textContent = parseFloat(v).toFixed(1);
-  const cat = v < 18.5 ? 'Underweight' : v < 25 ? 'Normal' : v < 30 ? 'Overweight' : 'Obese';
-  const msg = v < 18.5 ? 'Below healthy range. Consider nutritional support.'
-    : v < 25 ? 'Excellent! This is a healthy target.'
-    : v < 30 ? 'This is in the overweight range. A lower target is recommended.'
-    : 'This is in the obese range. Consult a healthcare provider.';
-  document.getElementById('target-info').querySelector('div').innerHTML = `Target BMI of <strong id="target-display" style="color:var(--accent)">${parseFloat(v).toFixed(1)}</strong> is in the <strong style="color:var(--accent)">${cat}</strong> range. ${msg}`;
+  const cat = v<18.5?'Underweight':v<25?'Normal':v<30?'Overweight':'Obese';
+  const msg = v<18.5?'Below healthy range. Consider nutritional support.'
+    :v<25?'Excellent! This is a healthy target.'
+    :v<30?'This is in the overweight range. A lower target is recommended.'
+    :'This is in the obese range. Consult a healthcare provider.';
+  document.getElementById('target-info').querySelector('div').innerHTML =
+    `Target BMI of <strong style="color:var(--accent)">${parseFloat(v).toFixed(1)}</strong> is in the <strong style="color:var(--accent)">${cat}</strong> range. ${msg}`;
 }
 
 // ============================================================
@@ -1526,9 +1509,9 @@ function showToast(msg) {
 renderHistory();
 renderGoals();
 updateChart();
-// Auto-show chart-card if there's history
 if (state.bmiHistory.length > 0) {
-  document.getElementById('chart-card') && (document.getElementById('chart-card').style.display = 'block');
+  const chartCard = document.getElementById('chart-card');
+  if (chartCard) chartCard.style.display = 'block';
   updateChart();
 }
 </script>
